@@ -1,14 +1,26 @@
 # =============================================================================
-# Perfil: local (desarrollo en máquina local con LocalStack, Postgres y Kafka)
+# Perfil: local (desarrollo rápido en máquina local)
 # =============================================================================
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/truckdar_notifications
-    username: truckdar
-    password: truckdar
+    url: jdbc:h2:mem:truckdar_notifications;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
   jpa:
+    hibernate:
+      ddl-auto: validate
+    database-platform: org.hibernate.dialect.H2Dialect
     show-sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  kafka:
+    listener:
+      auto-startup: false
 
 aws:
   region: us-east-1
@@ -23,5 +35,4 @@ aws:
 logging:
   level:
     com.truckdar.notifications: DEBUG
-    org.springframework.security: DEBUG
-    org.springframework.kafka: INFO
+    org.springframework.security: INFO

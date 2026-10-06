@@ -1,35 +1,36 @@
 -- =============================================================================
 -- V1 - Esquema inicial: tablas notification_templates, notifications y audio_cache
 -- Microservicio Notifications (TruckDar)
+-- Compatible con PostgreSQL y H2 PostgreSQL Mode
 -- =============================================================================
 
 CREATE TABLE notification_templates (
-    id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    category      VARCHAR(50)  NOT NULL,
-    language      VARCHAR(10)  NOT NULL DEFAULT 'es-CO',
-    channel       VARCHAR(20)  NOT NULL,
-    template_text TEXT         NOT NULL,
-    created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    id            UUID                      DEFAULT gen_random_uuid() PRIMARY KEY,
+    category      VARCHAR(50)               NOT NULL,
+    language      VARCHAR(10)               NOT NULL DEFAULT 'es-CO',
+    channel       VARCHAR(20)               NOT NULL,
+    template_text TEXT                      NOT NULL,
+    created_at    TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT now(),
+    updated_at    TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT now(),
     CONSTRAINT uk_template_cat_lang_chan UNIQUE (category, language, channel)
 );
 
 CREATE INDEX idx_templates_lookup ON notification_templates (category, language, channel);
 
 CREATE TABLE notifications (
-    id                UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    recipient_user_id UUID         NOT NULL,
-    channel           VARCHAR(20)  NOT NULL,
-    category          VARCHAR(50)  NOT NULL,
-    source_event_id   VARCHAR(100) NOT NULL,
-    source_event_type VARCHAR(100) NOT NULL,
-    payload           TEXT         NOT NULL,
+    id                UUID                      DEFAULT gen_random_uuid() PRIMARY KEY,
+    recipient_user_id UUID                      NOT NULL,
+    channel           VARCHAR(20)               NOT NULL,
+    category          VARCHAR(50)               NOT NULL,
+    source_event_id   VARCHAR(100)              NOT NULL,
+    source_event_type VARCHAR(100)              NOT NULL,
+    payload           TEXT                      NOT NULL,
     audio_url         TEXT,
-    status            VARCHAR(20)  NOT NULL DEFAULT 'PENDING',
+    status            VARCHAR(20)               NOT NULL DEFAULT 'PENDING',
     failure_reason    TEXT,
-    attempts          INT          NOT NULL DEFAULT 0,
-    created_at        TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    sent_at           TIMESTAMPTZ
+    attempts          INT                       NOT NULL DEFAULT 0,
+    created_at        TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT now(),
+    sent_at           TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX idx_notifications_recipient    ON notifications (recipient_user_id);
@@ -38,13 +39,13 @@ CREATE INDEX idx_notifications_status       ON notifications (status);
 CREATE INDEX idx_notifications_created_at   ON notifications (created_at DESC);
 
 CREATE TABLE audio_cache (
-    id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    text_hash        VARCHAR(64)  NOT NULL UNIQUE,
-    s3_key           VARCHAR(255) NOT NULL,
-    voice_id         VARCHAR(50)  NOT NULL,
-    language         VARCHAR(10)  NOT NULL DEFAULT 'es-CO',
-    created_at       TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    last_accessed_at TIMESTAMPTZ  NOT NULL DEFAULT now()
+    id               UUID                      DEFAULT gen_random_uuid() PRIMARY KEY,
+    text_hash        VARCHAR(64)               NOT NULL UNIQUE,
+    s3_key           VARCHAR(255)              NOT NULL,
+    voice_id         VARCHAR(50)               NOT NULL,
+    language         VARCHAR(10)               NOT NULL DEFAULT 'es-CO',
+    created_at       TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT now(),
+    last_accessed_at TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_audio_cache_hash ON audio_cache (text_hash);
