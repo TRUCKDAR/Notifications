@@ -1,0 +1,111 @@
+services:
+  # =============================================================================
+  # PostgreSQL (Base de datos propia de Notifications)
+  # =============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: truckdar-notifications-db
+    environment:
+      POSTGRES_DB: truckdar_notifications
+      POSTGRES_USER: truckdar
+      POSTGRES_PASSWORD: truckdar
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_notifications:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U truckdar -d truckdar_notifications"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - truckdar-network
+
+  # =============================================================================
+  # Kafka & Zookeeper (Simulación local de Amazon MSK)
+  # =============================================================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: truckdar-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - truckdar-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: truckdar-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - truckdar-network
+
+  # =============================================================================
+  # LocalStack (Simulación local de AWS SNS, Polly y S3)
+  # =============================================================================
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: truckdar-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sns,polly,s3
+      - AWS_DEFAULT_REGION=us-east-1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - ./localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - truckdar-network
+
+  # =============================================================================
+  # Notifications Microservice
+  # =============================================================================
+  notifications-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: truckdar-notifications-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      localstack:
+        condition: service_started
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DB_URL: jdbc:postgresql://postgres:5432/truckdar_notifications
+      DB_USERNAME: truckdar
+      DB_PASSWORD: truckdar
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      AWS_ENDPOINT_OVERRIDE: http://localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_S3_BUCKET: truckdar-voice-notifications
+      AWS_SNS_TOPIC_ARN: arn:aws:sns:us-east-1:000000000000:truckdar-notifications
+      SERVER_PORT: 8083
+    networks:
+      - truckdar-network
+
+volumes:
+  pgdata_notifications:
+
+networks:
+  truckdar-network:
+    name: truckdar-network
+    driver: bridge

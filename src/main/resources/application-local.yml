@@ -1,0 +1,27 @@
+# =============================================================================
+# Perfil: local (desarrollo en máquina local con LocalStack, Postgres y Kafka)
+# =============================================================================
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/truckdar_notifications
+    username: truckdar
+    password: truckdar
+  jpa:
+    show-sql: true
+
+aws:
+  region: us-east-1
+  endpoint-override: http://localhost:4566
+  access-key-id: test
+  secret-access-key: test
+  s3:
+    bucket: truckdar-voice-notifications
+  sns:
+    topic-arn: arn:aws:sns:us-east-1:000000000000:truckdar-notifications
+
+logging:
+  level:
+    com.truckdar.notifications: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.kafka: INFO
