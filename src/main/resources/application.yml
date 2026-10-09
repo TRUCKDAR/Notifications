@@ -1,120 +1,45 @@
-# =============================================================================
-# TruckDar - Notifications Microservice
-# Configuración base (se sobreescribe por perfil: local, dev, prod)
-# =============================================================================
+server:
+  port: 8087
 
 spring:
   application:
-    name: notifications
+    name: ms-notifications
 
-  # Base de datos
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/truckdar_notifications}
-    username: ${DB_USERNAME:truckdar}
-    password: ${DB_PASSWORD:truckdar}
+    url: jdbc:postgresql://localhost:5432/truckdar_db
+    username: truckdar_admin
+    password: truckdar_password
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: validate
-    open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
+      ddl-auto: update
+    show-sql: false
 
-  # Flyway
   flyway:
     enabled: true
+    baseline-on-migrate: true
     locations: classpath:db/migration
+    url: jdbc:postgresql://localhost:5432/truckdar_db
+    user: truckdar_admin
+    password: truckdar_password
 
-  # Kafka
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: localhost:9092
     consumer:
-      group-id: ${KAFKA_CONSUMER_GROUP:truckdar-notifications-group}
-      auto-offset-reset: earliest
-      enable-auto-commit: false
+      group-id: notifications-group
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
 
-# AWS SDK v2
-aws:
-  region: ${AWS_REGION:us-east-1}
-  endpoint-override: ${AWS_ENDPOINT_OVERRIDE:#{null}}
-  access-key-id: ${AWS_ACCESS_KEY_ID:#{null}}
-  secret-access-key: ${AWS_SECRET_ACCESS_KEY:#{null}}
-  s3:
-    bucket: ${AWS_S3_BUCKET:truckdar-voice-notifications}
-  sns:
-    topic-arn: ${AWS_SNS_TOPIC_ARN:arn:aws:sns:us-east-1:123456789012:truckdar-notifications}
-  polly:
-    voice-id: ${AWS_POLLY_VOICE_ID:Lupe}
-    presigned-url-duration-hours: ${AWS_POLLY_PRESIGNED_HOURS:24}
-
-# Tópicos de Kafka & Configuración de la App
-app:
+security:
   jwt:
-    secret: ${JWT_SECRET:dHJ1Y2tkYXItdXNlci1pZGVudGl0eS1zZWNyZXQta2V5LWJhc2U2NC1lbmNvZGVkLWF0LWxlYXN0LTI1Ni1iaXRz}
-  security:
-    api-key: ${INTERNAL_SERVICE_API_KEY:truckdar-internal-service-key-2026}
-  kafka:
-    dlt:
-      suffix: .DLT
-    topics:
-      route-alert: ${KAFKA_TOPIC_ROUTE_ALERT:truckdar.route.alerts}
-      road-closure: ${KAFKA_TOPIC_ROAD_CLOSURE:truckdar.route.closures}
-      load-reassigned: ${KAFKA_TOPIC_LOAD_REASSIGNED:truckdar.loads.reassigned}
-      trip-status: ${KAFKA_TOPIC_TRIP_STATUS:truckdar.trips.status}
-      dispatcher-message: ${KAFKA_TOPIC_DISPATCHER_MESSAGE:truckdar.dispatch.messages}
-      notification-sent: ${KAFKA_TOPIC_NOTIFICATION_SENT:truckdar.notifications.sent}
-      notification-failed: ${KAFKA_TOPIC_NOTIFICATION_FAILED:truckdar.notifications.failed}
+    secret-key: TruckDarSecretKeySecurityAuthenticationToken2026MasterKey!
 
-# Resilience4j
-resilience4j:
-  retry:
-    instances:
-      snsPush:
-        max-attempts: 3
-        wait-duration: 500ms
-        enable-exponential-backoff: true
-        exponential-backoff-multiplier: 2
-      pollyVoice:
-        max-attempts: 3
-        wait-duration: 500ms
-        enable-exponential-backoff: true
-        exponential-backoff-multiplier: 2
-  circuitbreaker:
-    instances:
-      snsPush:
-        sliding-window-size: 10
-        minimum-number-of-calls: 5
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
-        permitted-number-of-calls-in-half-open-state: 3
-      pollyVoice:
-        sliding-window-size: 10
-        minimum-number-of-calls: 5
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
-        permitted-number-of-calls-in-half-open-state: 3
-
-# Actuator
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
-  endpoint:
-    health:
-      show-details: when-authorized
-      probes:
-        enabled: true
-
-# OpenAPI
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-
-# Servidor
-server:
-  port: ${SERVER_PORT:8083}
+cloud:
+  aws:
+    region:
+      static: us-east-1
+    credentials:
+      access-key: test
+      secret-key: test
