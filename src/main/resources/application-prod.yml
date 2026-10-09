@@ -1,0 +1,21 @@
+# =============================================================================
+# Perfil: prod (producción - ECS Fargate / RDS / Amazon MSK / AWS nativo)
+# =============================================================================
+
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    root: WARN
+    com.truckdar.notifications: INFO
+    org.springframework.security: WARN
