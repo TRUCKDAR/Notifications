@@ -32,6 +32,12 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
 
+app:
+  jwt:
+    secret: TruckDarSecretKeySecurityAuthenticationToken2026MasterKey!
+  security:
+    api-key: truckdar-internal-service-key-2026
+
 security:
   jwt:
     secret-key: TruckDarSecretKeySecurityAuthenticationToken2026MasterKey!
